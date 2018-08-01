@@ -33,3 +33,19 @@ def step_impl(context, number):
 @then('I should have {number:d} items in all')
 def step_impl(context, number):
     assert(context.items_count == number)
+
+
+@when('I sell the following items')
+def step_impl(context):
+    rows = [ row.cells for row in context.table ]
+    df = context.session.createDataFrame(rows, context.table.headings)
+    
+    # Update the money left
+    df = df.withColumn('Profit', F.col('Quantity') * F.col('Price'))
+    
+    profit = df.agg({'Profit': 'sum'}).collect()[0][0]
+    context.amount += profit
+
+    # Update the amount of items
+    count_sold_items = df.agg({'Quantity': 'sum'}).collect()[0][0]
+    context.items_count -= count_sold_items
